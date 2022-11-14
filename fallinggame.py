@@ -55,6 +55,12 @@ class Thing:
         self.right = self.gb.x + self.gb.width/2
         self.top = self.gb.y - self.gb.height/2
         self.bottom = self.gb.y + self.gb.height/2
+    
+    def is_off_screen(self):
+        # returning (self.bottom < 0) would make the Thing directly below the despawning 
+        # thing flash for out of vision for a second, which was really distracting
+        # doing this means that the next Thing is also off screen when the first one despawns
+        return (self.bottom + screen_height) < 0
 
     def draw(self):
         camera.draw(self.gb)
@@ -223,10 +229,14 @@ def tick():
 
     # update the things
     for t in things:
-        t.update()
-        t.draw()
+        if not t.is_off_screen():
+            t.update()
+            t.draw()
+        else:
+            things.remove(t)
 
     # draw score on after thihngs
+    global score
     score += 1
     
     # take inputs and move player
