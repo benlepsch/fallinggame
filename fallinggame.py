@@ -3,8 +3,8 @@
     UNFINISHED
 
     todos:
-     - add a score counter
-     - make it quit if you get pushed above the screen height
+     - add a 'play again' button
+     - add sfx
      - (maybe) fix the side collision oddness, but idk i kind of like how it feels
 """
 
@@ -185,64 +185,111 @@ things = []
 # things.append(Thing(150, screen_height, 'red', 300, 40))
 
 # constaants to determine speed of things / how fast things spawn
+# i really shoulda just made this a separate class but it's too late now
 thing_up_speed = 3
 thing_timer = 30*3*3
 thing_c = thing_timer
 nottoofast = 0
+thing_color = 'brown'
 
 # player score
-score = 0
+# why on earth did i make this a class and not the Things
+# ev if you look through this code don't do it like i did it
+class Score:
+    def __init__(self):
+        self.color = 'yellow'
+        self.size = 80
+        self.x = screen_width - (self.size / 2 + 10)
+        self.y = 30
+        self.score = 0
+        self.gb = u.from_text(self.x, self.y, str(int(self.score)), self.size, self.color)
+    
+    def update(self):
+        self.score += 0.1*thing_up_speed
+        if self.score >= 1000:
+            self.x = screen_width - (self.size / 2 + 25)
+    
+    def show_game_over(self):
+        self.x = screen_width/2
+        self.y = screen_height/2
+        self.size = 90
+        m1 = 'Game Over!'
+        m2 = 'you scored {} points'.format(int(self.score))
+        self.gb = u.from_text(self.x, self.y - 20, m1, self.size, self.color)
+        gb2 = u.from_text(self.x, self.y + 40, m2, self.size, self.color)
+        camera.draw(self.gb)
+        camera.draw(gb2)
+    
+    def draw(self):
+        self.gb = u.from_text(self.x, self.y, str(int(self.score)), self.size, self.color)
+        camera.draw(self.gb)
+
+s = Score()
+
+
+game_over = False
 
 def tick():
     # set background color
-    camera.clear('grey') # make this get darker or something as you keep falling
+    camera.clear('light blue') # make this get darker or something as you keep falling
 
-    # spawn some things
-    global thing_c, thing_timer, thing_up_speed, nottoofast
-    thing_c += 1
-    if thing_c >= thing_timer/thing_up_speed:
-        gap_center = randint(200, screen_width - 200)
-        gap_width = randint(p.gb.width + 30, p.gb.width + 200)
+    global game_over
+    # if player is off sreen, game over
+    if p.gb.bottom < 0:
+        game_over = True 
+
+    if not game_over:
+        # spawn some things
+        global thing_c, thing_timer, thing_up_speed, nottoofast, thing_color
+        thing_c += 1
+        if thing_c >= thing_timer/thing_up_speed:
+            gap_center = randint(200, screen_width - 200)
+            gap_width = randint(p.gb.width + 30, p.gb.width + 200)
+            
+            # print('gap center: {}\tgap width: {}'.format(gap_center, gap_width))
+            
+            # make the left thing
+            t_x = (gap_center - gap_width/2)/2
+            t_w = (gap_center - gap_width/2)
+            things.append(Thing(t_x, screen_height + 20, thing_color, t_w, 40))
+
+            # make the right thing
+            t_x = (gap_center + gap_width/2 + screen_width)/2
+            t_w = screen_width - (gap_center + gap_width/2)
+            things.append(Thing(t_x, screen_height + 20, thing_color, t_w, 40))
+
+            thing_c = 0
+            nottoofast += 1
+
+            if thing_timer > 12*12:
+                thing_timer -= 5
+            # speed up spawning and MS
+            if thing_up_speed <= 12 and nottoofast > 3:
+                nottoofast = 0
+                thing_up_speed += 1
+
+
+        # update the things
+        for t in things:
+            if not t.is_off_screen():
+                t.update()
+                t.draw()
+            else:
+                things.remove(t)
+
+        # draw score on after thihngs
+        global s
+        s.update()
+        s.draw()
         
-        # print('gap center: {}\tgap width: {}'.format(gap_center, gap_width))
-        
-        # make the left thing
-        t_x = (gap_center - gap_width/2)/2
-        t_w = (gap_center - gap_width/2)
-        things.append(Thing(t_x, screen_height + 20, 'red', t_w, 40))
-
-        # make the right thing
-        t_x = (gap_center + gap_width/2 + screen_width)/2
-        t_w = screen_width - (gap_center + gap_width/2)
-        things.append(Thing(t_x, screen_height + 20, 'red', t_w, 40))
-
-        thing_c = 0
-        nottoofast += 1
-
-        if thing_timer > 10*12:
-            thing_timer -= 5
-        # speed up spawning and MS
-        if thing_up_speed <= 12 and nottoofast > 3:
-            nottoofast = 0
-            thing_up_speed += 1
-
-
-    # update the things
-    for t in things:
-        if not t.is_off_screen():
-            t.update()
-            t.draw()
-        else:
-            things.remove(t)
-
-    # draw score on after thihngs
-    global score
-    score += 1
-    
-    # take inputs and move player
-    # important to do this after updating the things
-    p.get_keys()
-    p.draw()
+        # take inputs and move player
+        # important to do this after updating the things
+        p.get_keys()
+        p.draw()
+    else:
+        # show score
+        # maybe add play again button
+        s.show_game_over()
 
     camera.display()
 
