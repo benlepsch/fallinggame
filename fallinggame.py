@@ -3,7 +3,6 @@
     UNFINISHED
 
     todos:
-     - make thing_timer a function of thing_up_speed
      - add a score counter
      - make it quit if you get pushed above the screen height
      - (maybe) fix the side collision oddness, but idk i kind of like how it feels
@@ -40,7 +39,6 @@ debug = False
         b1.move_both_to_stop_overlapping(b2) # b1 and b2 move same amount (and update speed
     
     they really just give you everything huh
-
 '''
 class Thing:
     def __init__(self, x, y, color, width, height):
@@ -180,10 +178,14 @@ p = Player()
 things = []
 # things.append(Thing(150, screen_height, 'red', 300, 40))
 
-thing_timer = 30*3
-thing_c = thing_timer
+# constaants to determine speed of things / how fast things spawn
 thing_up_speed = 3
+thing_timer = 30*3*3
+thing_c = thing_timer
 nottoofast = 0
+
+# player score
+score = 0
 
 def tick():
     # set background color
@@ -192,9 +194,9 @@ def tick():
     # spawn some things
     global thing_c, thing_timer, thing_up_speed, nottoofast
     thing_c += 1
-    if thing_c >= thing_timer:
+    if thing_c >= thing_timer/thing_up_speed:
         gap_center = randint(200, screen_width - 200)
-        gap_width = randint(p.gb.width + 50, p.gb.width + 200)
+        gap_width = randint(p.gb.width + 30, p.gb.width + 200)
         
         # print('gap center: {}\tgap width: {}'.format(gap_center, gap_width))
         
@@ -211,19 +213,21 @@ def tick():
         thing_c = 0
         nottoofast += 1
 
-        thing_timer = randint(thing_timer - 10, thing_timer + 10)
-
+        if thing_timer > 10*12:
+            thing_timer -= 5
         # speed up spawning and MS
-        if thing_timer >= 30:
-            thing_timer -= 4
-        if thing_up_speed <= 12 and nottoofast > 5:
+        if thing_up_speed <= 12 and nottoofast > 3:
             nottoofast = 0
             thing_up_speed += 1
+
 
     # update the things
     for t in things:
         t.update()
         t.draw()
+
+    # draw score on after thihngs
+    score += 1
     
     # take inputs and move player
     # important to do this after updating the things
